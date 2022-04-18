@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import HomeScreen from './screens/HomeScreen';
 import MoodScreen from './screens/MoodScreen';
+import SongScreen from './screens/SongScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -18,6 +19,10 @@ function App() {
         <Stack.Screen 
           name = 'Mood'
           component = { MoodScreen }
+        />
+        <Stack.Screen
+          name = 'Song'
+          component= { SongScreen }
         />
       </Stack.Navigator>
     </NavigationContainer>

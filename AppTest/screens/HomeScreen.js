@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, Text, Image, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 
-import styles from './styles'
+import styles from './styles';
 
 function HomeScreen({ navigation }) {
   const [image, setImage] = useState(null);
