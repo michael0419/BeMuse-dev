@@ -1,13 +1,14 @@
 import React from 'react';
 import { Pressable, Text, Image, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import styles from './styles';
+import styles from '../components/theme';
 
 function SongScreen({ route }) {
     return (
-        <View>
-            <Text>Songs</Text>
-        </View>
+        <SafeAreaView style={styles.container}>
+            <Text style={styles.title}>Songs</Text>
+        </SafeAreaView>
     );
 }
 

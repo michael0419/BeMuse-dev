@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Pressable, Text, Image, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-import styles from './styles';
+import styles from '../components/theme';
 
 function HomeScreen({ navigation }) {
   const [image, setImage] = useState(null);
@@ -47,7 +48,7 @@ function HomeScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.title}>Welcome to BeMuse</Text>
       <View style={styles.containerButton}>
         <Pressable 
@@ -62,16 +63,15 @@ function HomeScreen({ navigation }) {
         </Pressable>
         <Pressable 
         style={styles.button} 
-        onPress={ () => {
+        onPress={() => {
           navigation.navigate('Mood', {
             imageData: image
-            })
-          } 
-        }>
+          })
+        }}>
           <Text>Next</Text>
         </Pressable>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -10,6 +10,19 @@
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Give $(PRODUCT_NAME) permission to use your microphone</string>
 	<!-- -->
+	<!-- AuthSession -->
+	<key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>gizmos</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>example</string>
+            </array>
+        </dict>
+    </array>
+	<!-- -->
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>

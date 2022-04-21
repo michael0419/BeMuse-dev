@@ -4,11 +4,11 @@ export default StyleSheet.create({
     container: {
       flex: 1,
       backgroundColor: 'lightblue',
-      alignItems: 'center'
+      alignItems: 'center',
+      justifyContent: 'center'
     },
     title: {
-      fontSize: 25,
-      top: 20
+      fontSize: 25
     },
     containerButton: {
       flex: 1,
