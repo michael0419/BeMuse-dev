@@ -20,10 +20,11 @@ import {
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
 
+import * as FileSystem from 'expo-file-system';
 
 import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-react-native';
-import { fetch } from '@tensorflow/tfjs-react-native';
+import { decodeJpeg } from '@tensorflow/tfjs-react-native';
 import * as jpeg from 'jpeg-js'
 
 import * as ImagePicker from 'expo-image-picker';
@@ -34,6 +35,8 @@ const App = () => {
   const [isTfReady, setTfReady] = useState(false);
   const [face, setFace] = useState("none");
   const [image, setImage] = useState(null);
+  const [width, setWidth] = useState('');
+  const [height, setHeight] = useState('');
 
   useEffect(() => {
     async function waitForTensorFlowJs() {
@@ -61,8 +64,12 @@ const App = () => {
 
   const imageToTensor = (rawImageData) => {
     const TO_UINT8ARRAY = true
-    const { width, height, data } = jpeg.decode(rawImageData, TO_UINT8ARRAY)
+    //const { width, height, data } = jpeg.decode(rawImageData, TO_UINT8ARRAY)
     // Drop the alpha channel info for mobilenet
+    
+    //new
+    const data = rawImageData;
+
     const buffer = new Uint8Array(width * height * 3)
     let offset = 0 // offset into original data
     for (let i = 0; i < buffer.length; i += 3) {
@@ -73,7 +80,22 @@ const App = () => {
       offset += 4
     }
 
-    return tf.tensor3d(buffer, [height, width, 1]);
+    return tf.tensor3d(buffer, [height, width, 3])
+  }
+
+  const getImageDimensions = () => {
+ 
+    Image.getSize(image, (Width, Height) => {
+      setWidth(Width);
+      setHeight(Height);
+      console.log(height)
+      console.log(width)
+ 
+    }, (errorMsg) => {
+      console.log(errorMsg);
+ 
+    });
+ 
   }
   
   const predictImage = async() => {
@@ -85,23 +107,33 @@ const App = () => {
       // const imageDataArrayBuffer = await imageUri.arrayBuffer();
       // const imageData = new Uint8Array(imageDataArrayBuffer);
       console.log(image);
-      try {
-        const imageAssetPath = Image.resolveAssetSource(image);
-  
-        const response = await fetch(imageAssetPath.uri, {}, { isBinary: true });
-        const rawImageData = await response.arrayBuffer()
-        const imageTensor = imageToTensor(rawImageData)
-        //const predictions = await this.model.detect(imageTensor)
+      //try {
+        getImageDimensions();
+        const fileUri = image;      
+        const imgB64 = await FileSystem.readAsStringAsync(fileUri, {
+            encoding: FileSystem.EncodingType.Base64,
+        });
+        const imgBuffer = tf.util.encodeString(imgB64, 'base64').buffer;
+        const raw = new Uint8Array(imgBuffer)  
+        var imageTensor = imageToTensor(raw); //tf.tensor3d(raw, [height, width, 3])//tf.node.decodeImage(raw);
+
   
         //this.setState({ predictions: predictions })
         // this.setState({ image_uri: imageAssetPath.uri })
 
         // Decode image data to a tensor
         const alignCorners = true
-        
+        console.log("tensor good");
         //const imageTensor = tf.image.resizeBilinear(decodeJpeg(imageData, 1), [48, 48], alignCorners);
-        imageTensor = tf.image.resizeBilinear(imageTensor, [48, 48], alignCorners);
+        imageTensor = imageTensor.resizeBilinear([48, 48]).reshape([48,48,3]);
 
+        imageTensor=tf.ones([48,48,3])
+        const rgb_weights=[0.2989, 0.5870, 0.1140]
+        imageTensor = tf.mul(imageTensor, rgb_weights).toInt()
+        imageTensor = tf.sum(imageTensor, -1)
+        imageTensor = tf.expandDims(imageTensor, -1)
+        imageTensor= imageTensor.resizeBilinear([48,48]).reshape([-1,48,48,1])
+        console.log("tensor");
         //load model
         const model = await tf.loadLayersModel('https://raw.githubusercontent.com/michael0419/BeMuse-dev/TensorFlowTest/models/V1/model.json');
         //model.summary();
@@ -112,11 +144,11 @@ const App = () => {
 
         setFace(decode[result[0]]);
   
-        console.log('----------- predictions: ', predictions);
+      //  console.log('----------- predictions: ', predictions);
   
-      } catch (error) {
-        console.log('Exception Error: ', error);
-      }
+      //} catch (error) {
+      //  console.log('Exception Error: ', error);
+      //}
 
     }
   }
