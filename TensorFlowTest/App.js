@@ -136,6 +136,7 @@ const App = () => {
         console.log("tensor");
         //load model
         const model = await tf.loadLayersModel('https://raw.githubusercontent.com/michael0419/BeMuse-dev/TensorFlowTest/models/V1/model.json');
+        console.log("model loaded");
         //model.summary();
 
         //Todo: make cloud decode file
