@@ -12,13 +12,10 @@ import {
   // StatusBar,
 } from 'react-native';
 
-import {
-  Header,
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+// import {
+//   Header,
+//   Colors,
+// } from 'react-native/Libraries/NewAppScreen';
 
 import * as FileSystem from 'expo-file-system';
 
@@ -26,6 +23,8 @@ import * as tf from '@tensorflow/tfjs';
 import '@tensorflow/tfjs-react-native';
 import { decodeJpeg, bundleResourceIO } from '@tensorflow/tfjs-react-native';
 import * as jpeg from 'jpeg-js'
+
+import * as ImageManipulator from 'expo-image-manipulator';
 
 import * as ImagePicker from 'expo-image-picker';
 
@@ -49,11 +48,14 @@ const App = () => {
     waitForTensorFlowJs();
 
     async function loadModel(){
-      const modelJson = require('./models/model.json');
-      const modelWeights = require('./models/group1-shard1of1.bin');
-      const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
-      setModel(loadedModel);
-      console.log("model loaded");
+      await tf.ready()
+      if(!model){
+        const modelJson = require('./models/model.json');
+        const modelWeights = require('./models/group1-shard1of1.bin');
+        const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
+        setModel(loadedModel);
+        console.log("model loaded");
+      }
     }
     loadModel();
   }, []);
@@ -75,44 +77,6 @@ const App = () => {
     }
   }
 
-  // const imageToTensor = (rawImageData) => {
-  //   const TO_UINT8ARRAY = true
-  //   //const { width, height, data } = jpeg.decode(rawImageData, TO_UINT8ARRAY)
-  //   // Drop the alpha channel info for mobilenet
-    
-  //   //new
-  //   const data = rawImageData;
-
-  //   const buffer = new Uint8Array(width * height * 3)
-  //   let offset = 0 // offset into original data
-  //   for (let i = 0; i < buffer.length; i += 3) {
-  //     buffer[i] = data[offset]
-  //     buffer[i + 1] = data[offset + 1]
-  //     buffer[i + 2] = data[offset + 2]
-
-  //     offset += 4
-  //   }
-
-  //   return tf.tensor3d(buffer, [height, width, 3], 'float32')
-  // }
-
-  function imageToTensor(rawImageData) {
-    const TO_UINT8ARRAY = true
-    const { width, height, data } = jpeg.decode(rawImageData, TO_UINT8ARRAY)
-    // Drop the alpha channel info for mobilenet
-    const buffer = new Uint8Array(width * height * 3)
-    let offset = 0 // offset into original data
-    for (let i = 0; i < buffer.length; i += 3) {
-      buffer[i] = data[offset]
-      buffer[i + 1] = data[offset + 1]
-      buffer[i + 2] = data[offset + 2]
-
-      offset += 4
-    }
-
-    return tf.tensor3d(buffer, [height, width, 3])
-  }
-
   const getImageDimensions = () => {
  
     Image.getSize(image, (Width, Height) => {
@@ -129,44 +93,62 @@ const App = () => {
   }
 
   //helper functions
-  
 
-  const prepTensor = (imgTensor, size) => {
-    // Convert to tensor
-    //const imgTensor = tf.fromPixels(img)
-    const NORMALIZATION_OFFSET = tf.scalar(2*127.5)
-    // Normalize from [0, 255] to [0, 1].
-    const normalized = imgTensor
-      .toFloat()
-      .sub(NORMALIZATION_OFFSET)
-      .div(NORMALIZATION_OFFSET)
-
-    if (imgTensor.shape[0] === size && imgTensor.shape[1] === size) {
-      return normalized
+  //new
+  function base64ImageToTensorStandardAndGrey(base64){
+    //Function to convert jpeg image to tensors
+    const rawImageData = tf.util.encodeString(base64, 'base64');
+    const TO_UINT8ARRAY = true;
+    const { width, height, data } = jpeg.decode(rawImageData, TO_UINT8ARRAY);
+    // Drop the alpha channel info for mobilenet
+    const buffer = new Float32Array(width * height * 3);
+    let offset = 0; // offset into original data
+    for (let i = 0; i < buffer.length; i += 3) {
+      buffer[i] = data[offset]/255.0;
+      buffer[i + 1] = data[offset + 1]/255.0;
+      buffer[i + 2] = data[offset + 2]/255.0;
+      offset += 4;
     }
 
-    // Resize image to proper dimensions
-    const alignCorners = true
-    return tf.image.resizeBilinear(normalized, [size, size], alignCorners)
+    //Make greyscale
+    const buffer2 = new Float32Array(width * height)
+    for (let i = 0; i < buffer.length; i += 3) {
+      buffer2[i/3] = 0.2989*buffer[i] + 0.5870*buffer[i + 1] +  0.1140*buffer[i + 2]; 
+    }
+    return tf.tensor3d(buffer2, [height, width, 1], 'float32');
   }
 
+  function base64ImageToTensor(base64){
+    //Function to convert jpeg image to tensors
+    const rawImageData = tf.util.encodeString(base64, 'base64');
+    const TO_UINT8ARRAY = true;
+    const { width, height, data } = jpeg.decode(rawImageData, TO_UINT8ARRAY);
+    // Drop the alpha channel info for mobilenet
+    const buffer = new Float32Array(width * height * 3);
+    let offset = 0; // offset into original data
+    for (let i = 0; i < buffer.length; i += 3) {
+      buffer[i] = data[offset];
+      buffer[i + 1] = data[offset + 1];
+      buffer[i + 2] = data[offset + 2];
+      offset += 4;
+    }
+    return tf.tensor3d(buffer, [height, width, 3], 'float32');
+  }
 
-  const rgbToGrayscale = async imgTensor => {
-    const minTensor = imgTensor.min()
-    const maxTensor = imgTensor.max()
-    const min = (await minTensor.data())[0]
-    const max = (await maxTensor.data())[0]
-    minTensor.dispose()
-    maxTensor.dispose()
-
-    // Normalize to [0, 1]
-    const normalized = imgTensor.sub(tf.scalar(min)).div(tf.scalar(max - min))
-
-    // Compute mean of R, G, and B values
-    let grayscale = normalized.mean(2)
-
-    // Expand dimensions to get proper shape: (h, w, 1)
-    return grayscale.expandDims(2)
+  async function resizeImage(imageUrl, width, height){
+    const actions = [{
+      resize: {
+        width,
+        height
+      },
+    }];
+    const saveOptions = {
+      compress: 0.75,
+      format: ImageManipulator.SaveFormat.JPEG,
+      base64: true,
+    };
+    const res = await ImageManipulator.manipulateAsync(imageUrl, actions, saveOptions);
+    return res;
   }
   
   const predictImage = async() => {
@@ -182,87 +164,41 @@ const App = () => {
         getImageDimensions();
         const fileUri = image;
         console.log(fileUri)      
-        // const imgB64 = await FileSystem.readAsStringAsync(fileUri, {
-        //     encoding: FileSystem.EncodingType.Base64,
-        // });
-        // const imgBuffer = tf.util.encodeString(imgB64, 'base64').buffer;
-        // const raw = new Uint8Array(imgBuffer)  
-        //var imageTensor = decodeJpeg(raw);//imageToTensor(raw); //tf.tensor3d(raw, [height, width, 3])//tf.node.decodeImage(raw);
-        // const imageAssetPath = Image.resolveAssetSource(image);
-        // const response = await fetch(image, {}, { isBinary: true })
-        // const rawImageData = await response.arrayBuffer()
-        const imgB64 = await FileSystem.readAsStringAsync(fileUri, {
-            encoding: FileSystem.EncodingType.Base64,
-        });
-        const imgBuffer = tf.util.encodeString(imgB64, 'base64').buffer;
-        const raw = new Uint8Array(imgBuffer)  
-        const imageTensor = imageToTensor(raw)
-        const valuesTensor =  imageTensor.arraySync();
-        console.log(imageTensor.print());
 
-        //const fileUri = 'NON-HTTP-URI-GOES-HERE';      
-        // const imgB64 = await FileSystem.readAsStringAsync(fileUri, {
-        //     encoding: FileSystem.EncodingType.Base64,
-        // });
-        // const imgBuffer = tf.util.encodeString(imgB64, 'base64').buffer;
-        // const raw = new Uint8Array(imgBuffer)  
-        // const imageTensor = decodeJpeg(raw);
-
-        //const preConvert = await imageTensor.data();
-        const imageTensorSum = imageTensor.sum();
-        const imageChecksum = (await imageTensorSum.data())[0];
-        console.log(imageTensor.print());
-        console.log(imageChecksum);
-  
-        //this.setState({ predictions: predictions })
-        // this.setState({ image_uri: imageAssetPath.uri })
-
-        // Decode image data to a tensor
-        const alignCorners = true
-        console.log("tensor good");
-        //const imageTensor = tf.image.resizeBilinear(decodeJpeg(imageData, 1), [48, 48], alignCorners);
-        //imageTensor = imageTensor.resizeBilinear([48, 48]).reshape([48,48,3]);
+        //works
+        let imageRes = await resizeImage(image, 48 , 48);
+        //let imageTensor = base64ImageToTensor(imageRes.base64);
+        let imageTensor = base64ImageToTensorStandardAndGrey(imageRes.base64);
         
-        //imageTensor= tf.ones([48,48,3])
-        //convert to greyscale
-        const rgb_weights=[0.2989, 0.5870, 0.1140]
-        const imageTensor2 = tf.image.resizeBilinear(imageTensor, [48,48], true).mul(rgb_weights).sum(-1).expandDims( -1)
-        
-        const imageTensorSum2 = imageTensor2.sum();
-        const imageChecksum2 = (await imageTensorSum2.data())[0];
-        console.log(imageTensor2.print());
-        console.log(imageChecksum2);
-        //imageTensor= imageTensor//.reshape([-1,48,48,1])
-        //imageTensor = tf.image.resizeBilinear(imageTensor, [48,48], true)//.reshape([-1,48,48,1])
-        
-        //color conversion
-        // const imageTensor1 = await rgbToGrayscale(imageTensor);
-        // console.log(imageTensor1.print());
-
-        //normalize
-        // const imageTensor2 = await prepTensor(imageTensor1, 48);
+        //WIP
         
 
-        
-        //imageTensor= tf.image.resizeBilinear(imageTensor, [48,48], true).reshape([-1,48,48,1])
-        let input = tf.zeros([1, 48, 48, 1]);
-        input[0] = imageTensor2
-        
-        //const postConvert = await imageTensor.data();
-        //console.log(imageTensor.print());
-        console.log("tensor converted");
-        
+        let temp = imageTensor.reshape([-1,48,48,1]);
+        console.log(temp.print()); 
+
+        await tf.ready()
         //model.summary();
+        // const modelJson = require('./models/model.json');
+        // const modelWeights = require('./models/group1-shard1of1.bin');
+        // const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
+
+        const modelJson = require('./models/model.json');
+        const modelWeights = require('./models/group1-shard1of1.bin');
+        const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
+        //setModel(loadedModel);
+        console.log("model loaded");
 
         //Todo: make cloud decode file
-        const result = await model.predict(input).data();
-        console.log(result);
+        const result = loadedModel.execute(temp);
+        let topCat = result.dataSync();
+        console.log(topCat);
         const decode = ["mad", "happy", "neutral", "sad"]
 
-        setFace(decode[result[0]]);
-        console.log("predictions made" + result);
+        setFace(decode[topCat]);
+        console.log("predictions made\n" + result);
+        imageTensor.dispose();
       //  console.log('----------- predictions: ', predictions);
-  
+        
       } catch (error) {
         console.log('Exception Error: ', error);
       }
@@ -275,7 +211,7 @@ const App = () => {
       <StatusBar barStyle="dark-content" />
       <SafeAreaView>
         <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.scrollView}>
-          <Header />
+          
           {/* {global.HermesInternal == null ? null : (
             <View style={styles.engine}>
               <Text style={styles.footer}>Engine: Hermes</Text>
@@ -312,14 +248,14 @@ const App = () => {
 
 const styles = StyleSheet.create({
   scrollView: {
-    backgroundColor: Colors.lighter,
+    backgroundColor: '#2ee188',
   },
   engine: {
     position: 'absolute',
     right: 0,
   },
   body: {
-    backgroundColor: Colors.white,
+    backgroundColor: '#d3e2da',
   },
   sectionContainer: {
     marginTop: 32,
@@ -328,19 +264,19 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 24,
     fontWeight: '600',
-    color: Colors.black,
+    color: '#000000',
   },
   sectionDescription: {
     marginTop: 8,
     fontSize: 18,
     fontWeight: '400',
-    color: Colors.dark,
+    color: '#9e3309',
   },
   highlight: {
     fontWeight: '700',
   },
   footer: {
-    color: Colors.dark,
+    color: '#af84fc',
     fontSize: 12,
     fontWeight: '600',
     padding: 4,
