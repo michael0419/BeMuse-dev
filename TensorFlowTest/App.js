@@ -15,7 +15,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 
 import axios from 'axios';
-const baseUrl = 'http://localhost:8000';
+const baseUrl = 'http://bemuseferapi.herokuapp.com';
 
 const App = () => {
 
