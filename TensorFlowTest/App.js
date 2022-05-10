@@ -36,8 +36,7 @@ const App = () => {
   const [image, setImage] = useState(null);
   const [width, setWidth] = useState('');
   const [height, setHeight] = useState('');
-  const [model, setModel] = useState(null);
-  var img2 = null;
+  //const [model, setModel] = useState(null);
   //var model;
 
   useEffect(() => {
@@ -47,17 +46,17 @@ const App = () => {
     }
     waitForTensorFlowJs();
 
-    async function loadModel(){
-      await tf.ready()
-      if(!model){
-        const modelJson = require('./models/model.json');
-        const modelWeights = require('./models/group1-shard1of1.bin');
-        const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
-        setModel(loadedModel);
-        console.log("model loaded");
-      }
-    }
-    loadModel();
+    // async function loadModel(){
+    //   await tf.ready()
+    //   if(!model){
+    //     const modelJson = require('./models/model.json');
+    //     const modelWeights = require('./models/group1-shard1of1.bin');
+    //     const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
+    //     setModel(loadedModel);
+    //     console.log("model loaded");
+    //   }
+    // }
+    // loadModel();
   }, []);
 
   //for image
@@ -168,35 +167,14 @@ const App = () => {
         //works
         let imageRes = await resizeImage(image, 48 , 48);
         //let imageTensor = base64ImageToTensor(imageRes.base64);
-        let imageTensor = base64ImageToTensorStandardAndGrey(imageRes.base64);
-        
+        //let imageTensor = base64ImageToTensorStandardAndGrey(imageRes.base64);
+        let data = imageRes.base64
         //WIP
-        
 
-        let temp = imageTensor.reshape([-1,48,48,1]);
-        console.log(temp.print()); 
 
-        await tf.ready()
-        //model.summary();
-        // const modelJson = require('./models/model.json');
-        // const modelWeights = require('./models/group1-shard1of1.bin');
-        // const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
+        //Todo: make API request
 
-        const modelJson = require('./models/model.json');
-        const modelWeights = require('./models/group1-shard1of1.bin');
-        const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
-        //setModel(loadedModel);
-        console.log("model loaded");
 
-        //Todo: make cloud decode file
-        const result = loadedModel.execute(temp);
-        let topCat = result.dataSync();
-        console.log(topCat);
-        const decode = ["mad", "happy", "neutral", "sad"]
-
-        setFace(decode[topCat]);
-        console.log("predictions made\n" + result);
-        imageTensor.dispose();
       //  console.log('----------- predictions: ', predictions);
         
       } catch (error) {
