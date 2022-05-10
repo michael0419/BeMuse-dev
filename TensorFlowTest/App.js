@@ -28,6 +28,9 @@ import * as ImageManipulator from 'expo-image-manipulator';
 
 import * as ImagePicker from 'expo-image-picker';
 
+import axios from 'axios';
+const baseUrl = 'http://localhost:8000';
+
 
 const App = () => {
   // State to indicate if TensorFlow.js finished loading
@@ -72,7 +75,7 @@ const App = () => {
 
     if (!result.cancelled) {
       setImage(result.uri);
-      img2 = result.uri;
+      //img2 = result.uri;
     }
   }
 
@@ -162,18 +165,43 @@ const App = () => {
       try {
         getImageDimensions();
         const fileUri = image;
-        console.log(fileUri)      
+        //console.log(fileUri)      
 
         //works
         let imageRes = await resizeImage(image, 48 , 48);
         //let imageTensor = base64ImageToTensor(imageRes.base64);
         //let imageTensor = base64ImageToTensorStandardAndGrey(imageRes.base64);
         let data = imageRes.base64
+
+        console.log(imageRes.base64)
         //WIP
 
+        // const configurationObject = {
+        //   method: 'post',
+        //   url: `${baseUrl}/api/users/1`,
+        // };
+
+        
 
         //Todo: make API request
+        try {
+          const response = await axios.post(`${baseUrl}/net/image/prediction/`, {
+            "img64": data,
+          });
+          if (response.status === 200) {
+            let result = response.data
+            console.log(` You have created: ${JSON.stringify(response.data)}`);
+            setFace(result["model-prediction"])
+            console.log(result)
 
+          } else {
+            throw new Error("An error has occurred");
+          }
+        } catch (error) {
+          console.log("An error has occurred");
+        }
+        
+        
 
       //  console.log('----------- predictions: ', predictions);
         
