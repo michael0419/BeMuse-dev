@@ -8,14 +8,7 @@ import {
   Text,
   Button,
   Image,
-  Platform,
-  // StatusBar,
 } from 'react-native';
-
-// import {
-//   Header,
-//   Colors,
-// } from 'react-native/Libraries/NewAppScreen';
 
 import * as ImageManipulator from 'expo-image-manipulator';
 
@@ -28,17 +21,7 @@ const App = () => {
 
   const [face, setFace] = useState("none");
   const [image, setImage] = useState(null);
-  const [width, setWidth] = useState('');
-  const [height, setHeight] = useState('');
-  //const [model, setModel] = useState(null);
-  //var model;
-
-  useEffect(() => {
-
-
-
-  }, []);
-
+  
   //for image
   
   const pickImage = async () => {
@@ -52,27 +35,11 @@ const App = () => {
 
     if (!result.cancelled) {
       setImage(result.uri);
-      //img2 = result.uri;
     }
   }
 
-  const getImageDimensions = () => {
- 
-    Image.getSize(image, (Width, Height) => {
-      setWidth(Width);
-      setHeight(Height);
-      console.log(height)
-      console.log(width)
- 
-    }, (errorMsg) => {
-      console.log(errorMsg);
- 
-    });
- 
-  }
 
   //helper functions
-
   async function resizeImage(imageUrl, width, height){
     const actions = [{
       resize: {
@@ -81,7 +48,7 @@ const App = () => {
       },
     }];
     const saveOptions = {
-      compress: 0.75,
+      compress: 1,
       format: ImageManipulator.SaveFormat.JPEG,
       base64: true,
     };
@@ -91,35 +58,16 @@ const App = () => {
   
   const predictImage = async() => {
     if(image){
-      // Load an image as a Uint8Array
-      // const imageUri = image; 
-      // console.log(imageUri);
-      // const response = await fetch(imageUri, {}, { isBinary: true });
-      // const imageDataArrayBuffer = await imageUri.arrayBuffer();
-      // const imageData = new Uint8Array(imageDataArrayBuffer);
+      
       console.log(image);
       try {
-        getImageDimensions();
-        const fileUri = image;
-        //console.log(fileUri)      
 
-        //works
+        //resize image for model and space efficiency
         let imageRes = await resizeImage(image, 48 , 48);
-        //let imageTensor = base64ImageToTensor(imageRes.base64);
-        //let imageTensor = base64ImageToTensorStandardAndGrey(imageRes.base64);
         let data = imageRes.base64
-
         console.log(imageRes.base64)
-        //WIP
 
-        // const configurationObject = {
-        //   method: 'post',
-        //   url: `${baseUrl}/api/users/1`,
-        // };
-
-        
-
-        //Todo: make API request
+        //Make API request
         try {
           const response = await axios.post(`${baseUrl}/net/image/prediction/`, {
             "img64": data,
@@ -138,9 +86,6 @@ const App = () => {
         }
         
         
-
-      //  console.log('----------- predictions: ', predictions);
-        
       } catch (error) {
         console.log('Exception Error: ', error);
       }
@@ -153,12 +98,7 @@ const App = () => {
       <StatusBar barStyle="dark-content" />
       <SafeAreaView>
         <ScrollView contentInsetAdjustmentBehavior="automatic" style={styles.scrollView}>
-          
-          {/* {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
-            </View>
-          )} */}
+
           <View style={styles.body}>
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionDescription}>
