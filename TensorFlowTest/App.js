@@ -17,13 +17,6 @@ import {
 //   Colors,
 // } from 'react-native/Libraries/NewAppScreen';
 
-import * as FileSystem from 'expo-file-system';
-
-import * as tf from '@tensorflow/tfjs';
-import '@tensorflow/tfjs-react-native';
-import { decodeJpeg, bundleResourceIO } from '@tensorflow/tfjs-react-native';
-import * as jpeg from 'jpeg-js'
-
 import * as ImageManipulator from 'expo-image-manipulator';
 
 import * as ImagePicker from 'expo-image-picker';
@@ -31,10 +24,8 @@ import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 const baseUrl = 'http://localhost:8000';
 
-
 const App = () => {
-  // State to indicate if TensorFlow.js finished loading
-  const [isTfReady, setTfReady] = useState(false);
+
   const [face, setFace] = useState("none");
   const [image, setImage] = useState(null);
   const [width, setWidth] = useState('');
@@ -43,23 +34,9 @@ const App = () => {
   //var model;
 
   useEffect(() => {
-    async function waitForTensorFlowJs() {
-      await tf.ready();
-      setTfReady(true);
-    }
-    waitForTensorFlowJs();
 
-    // async function loadModel(){
-    //   await tf.ready()
-    //   if(!model){
-    //     const modelJson = require('./models/model.json');
-    //     const modelWeights = require('./models/group1-shard1of1.bin');
-    //     const loadedModel = await tf.loadGraphModel(bundleResourceIO(modelJson, modelWeights));
-    //     setModel(loadedModel);
-    //     console.log("model loaded");
-    //   }
-    // }
-    // loadModel();
+
+
   }, []);
 
   //for image
@@ -95,47 +72,6 @@ const App = () => {
   }
 
   //helper functions
-
-  //new
-  function base64ImageToTensorStandardAndGrey(base64){
-    //Function to convert jpeg image to tensors
-    const rawImageData = tf.util.encodeString(base64, 'base64');
-    const TO_UINT8ARRAY = true;
-    const { width, height, data } = jpeg.decode(rawImageData, TO_UINT8ARRAY);
-    // Drop the alpha channel info for mobilenet
-    const buffer = new Float32Array(width * height * 3);
-    let offset = 0; // offset into original data
-    for (let i = 0; i < buffer.length; i += 3) {
-      buffer[i] = data[offset]/255.0;
-      buffer[i + 1] = data[offset + 1]/255.0;
-      buffer[i + 2] = data[offset + 2]/255.0;
-      offset += 4;
-    }
-
-    //Make greyscale
-    const buffer2 = new Float32Array(width * height)
-    for (let i = 0; i < buffer.length; i += 3) {
-      buffer2[i/3] = 0.2989*buffer[i] + 0.5870*buffer[i + 1] +  0.1140*buffer[i + 2]; 
-    }
-    return tf.tensor3d(buffer2, [height, width, 1], 'float32');
-  }
-
-  function base64ImageToTensor(base64){
-    //Function to convert jpeg image to tensors
-    const rawImageData = tf.util.encodeString(base64, 'base64');
-    const TO_UINT8ARRAY = true;
-    const { width, height, data } = jpeg.decode(rawImageData, TO_UINT8ARRAY);
-    // Drop the alpha channel info for mobilenet
-    const buffer = new Float32Array(width * height * 3);
-    let offset = 0; // offset into original data
-    for (let i = 0; i < buffer.length; i += 3) {
-      buffer[i] = data[offset];
-      buffer[i + 1] = data[offset + 1];
-      buffer[i + 2] = data[offset + 2];
-      offset += 4;
-    }
-    return tf.tensor3d(buffer, [height, width, 3], 'float32');
-  }
 
   async function resizeImage(imageUrl, width, height){
     const actions = [{
@@ -226,8 +162,7 @@ const App = () => {
           <View style={styles.body}>
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionDescription}>
-                TensorFlow.js v{tf.version.tfjs} is {isTfReady ? 'ready' : 'loading'}{' '}
-                {isTfReady && `and using backend: ${tf.getBackend()}`}.
+                Hello World
               </Text>
             </View>
             <View style={styles.sectionContainer}>
