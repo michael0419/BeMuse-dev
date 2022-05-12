@@ -1,75 +1,111 @@
-import React, { useState } from 'react';
-import { Pressable, Text, Image, View } from 'react-native';
+import React from 'react';
+import { TouchableHighlight, Text, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
 import * as ImagePicker from 'expo-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 
-import styles from '../components/theme';
+import mainStyles from '../components/MainTheme';
 
-function HomeScreen({ navigation }) {
-  const [image, setImage] = useState(null);
+const HomeScreen = ({ navigation }) => {
+  let imageData = null;
+
+  const uploadImage = async (photo) => {
+    if (!photo.cancelled) {
+      imageData = photo.uri;
+    }
+    else {
+      imageData = null;
+    }
+  }
 
   // access camera
   const openCamera = async () => {
     // ask user for permission to access the camera
-    const camPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
 
-    if (camPermission.granted === false) {
+    if (cameraPermission.granted === false) {
       alert('You have refused to allow this app to access your camera');
       return;
     }
 
-    let result = await ImagePicker.launchCameraAsync();
+    try {
+      let photo = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [2, 3],
+        quality: 1,
+      });
 
-    if (!result.cancelled) {
-      setImage(result.uri);
+      return await uploadImage(photo);
+    }
+    catch (e) {
+      console.error(e);
+      return;
     }
   }
 
   // access media library
   const pickImage = async () => {
     // ask user for permission to access media library
-    const galPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const galleryPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (galPermission.granted === false) {
+    if (galleryPermission.granted === false) {
       alert('You have refused to allow this app to access your photos');
       return;
     }
 
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.All,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
+    try {
+      let photo = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        aspect: [2, 3],
+        quality: 1,
+      });
 
-    if (!result.cancelled) {
-      setImage(result.uri);
+      return await uploadImage(photo);
+    }
+    catch (e) {
+      console.error(e);
+      return;
     }
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Welcome to BeMuse</Text>
-      <View style={styles.containerButton}>
-        <Pressable 
-        style={styles.button} 
-        onPress={ openCamera }>
-          <Text>Camera</Text>
-        </Pressable>
-        <Pressable 
-        style={styles.button} 
-        onPress={ pickImage }>
-          <Text>Gallery</Text>
-        </Pressable>
-        <Pressable 
-        style={styles.button} 
-        onPress={() => {
-          navigation.navigate('Mood', {
-            imageData: image
-          })
+    <SafeAreaView style={mainStyles.container}>
+      <StatusBar style='light' />
+      <Text style={mainStyles.title}>BeMuse</Text>
+      <View style={mainStyles.containerButton}>
+        <TouchableHighlight 
+        style={mainStyles.cameraButton}
+        activeOpacity={0.9}
+        underlayColor={'#492A6E'}
+        onPress={async () => {
+          await openCamera();
+          if (imageData) {
+            navigation.navigate('Mood', {
+              imageData: imageData
+            });
+          }
         }}>
-          <Text>Next</Text>
-        </Pressable>
+          <Ionicons 
+          name="camera" 
+          size={80}
+          style={mainStyles.buttonText}/>
+        </TouchableHighlight>
+        <TouchableHighlight
+        style={mainStyles.uploadButton}
+        activeOpacity={0.9}
+        underlayColor={'#492A6E'}
+        onPress={async () => {
+          await pickImage();
+          if (imageData) {
+            navigation.navigate('Mood', {
+              imageData: imageData
+            });
+          }
+        }}>
+          <Text style={mainStyles.buttonText}>Upload</Text>
+        </TouchableHighlight>
       </View>
     </SafeAreaView>
   );

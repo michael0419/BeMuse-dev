@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { StatusBar } from 'expo-status-bar';
+import { Provider } from 'react-redux';
 
-import { getData } from './api/TokenStorage';
 import LoginScreen from './screens/LoginScreen';
-import HomeNavigation from './navigation/HomeNavigation';
+import HomeScreen from './screens/HomeScreen';
+import MoodScreen from './screens/MoodScreen';
+import SongScreen from './screens/SongScreen';
+import { getData } from './api/storage/TokenStorage';
+import { store } from './api/redux/Store';
 
 const Stack = createNativeStackNavigator();
 
-function App() {
+const App = () => {
   const [isAuthenticated, setIsAuthenicated] = useState(false);
 
   useEffect(() => {
@@ -17,7 +20,8 @@ function App() {
   }, []);
 
   const fetchUser = async () => {
-    const user = await getData('access_token');
+    const user = await getData('@access_token');
+
     if (!user) {
       setIsAuthenicated(false);
     }
@@ -27,6 +31,7 @@ function App() {
   };
 
   return (
+    <Provider store={store}>
       <NavigationContainer>
         <Stack.Navigator>
           {!isAuthenticated ? (
@@ -38,12 +43,28 @@ function App() {
           ) : ( 
             <Stack.Screen 
             name = 'HomeNav'
-            component = { HomeNavigation }
+            component = { HomeScreen }
             options = { {headerShown: false} }
             />
           )}
+          <Stack.Screen 
+          name = 'Home'
+          component = { HomeScreen }
+          options = { {headerShown: false} }
+          />
+          <Stack.Screen 
+          name = 'Mood'
+          component = { MoodScreen }
+          options = { {headerShown: false} }
+          />
+          <Stack.Screen
+          name = 'Song'
+          component= { SongScreen }
+          options = { {headerShown: false} }
+          />
         </Stack.Navigator>
       </NavigationContainer>
+    </Provider>
   );
 }
 
