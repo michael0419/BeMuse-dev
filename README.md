@@ -1,2 +1,2 @@
 # BeMuse-dev
-Developing App for CTP
+An App that uses Facial Emotion Recognition for the discovery of music!
