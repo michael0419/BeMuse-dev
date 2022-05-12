@@ -55,4 +55,4 @@ web-build/
 dist/
 
 # credentials
-api/SpotifyCreds.js
+api/storage/SpotifyCreds.js
