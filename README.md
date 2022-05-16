@@ -1,4 +1,4 @@
-# BeMuse-dev
+# BeMuse
 An App that uses Facial Emotion Recognition for the discovery of music!
 
 ## Why we built it  
